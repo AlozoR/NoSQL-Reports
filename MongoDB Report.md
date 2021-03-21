@@ -1,199 +1,273 @@
-# Mongo DB 
+# NoSQL Report: Mongodb
 
-## 2.1 Simple Queries
 
-#### 2.1.1 
-```javascript
-db.dblp.find({type: "Book"}, {title: 1 , _id: 0})
+## Know your dataset
+
+### Theme
+
+Our Dataset is called "cities" and is 29467 rows long.
+Each row corresponds to a city, and each cities are described by five attribute : 
+- city: the name of the city
+- loc: the location with the coordinates of the city
+- pop: the population, number of people living in the city
+- state: the abreviation of the city's state
+- _id: the city's zip code
+```json
+{ "city" : "AGAWAM", "loc" : [ -72.622739, 42.070206 ],
+  "pop" : 15338, "state" : "MA", "_id" : "01001" }
 ```
 
-#### 2.1.2
-```javascript
-db.dblp.find({"year":{$gte:2011}});
+This dataset represent cities from the U.S.A. and is classified as an easy dataset due to the poor number of columns.
 
+### Study of the dataset
+
+An important detail about the data we have, is that some cities appear several times in the dataset:
+```json
+{ "city" : "SPRINGFIELD", "loc" : [ -72.588735, 42.1029 ],
+  "pop" : 2323, "state" : "MA", "_id" : "01103" }
+{ "city" : "SPRINGFIELD", "loc" : [ -72.577769, 42.128848 ],
+  "pop" : 22115, "state" : "MA", "_id" : "01104" }
+{ "city" : "SPRINGFIELD", "loc" : [ -72.578312, 42.099931 ],
+  "pop" : 14970, "state" : "MA", "_id" : "01105" }
+{ "city" : "LONGMEADOW", "loc" : [ -72.5676, 42.050658 ],
+  "pop" : 15688, "state" : "MA", "_id" : "01106" }
+{ "city" : "SPRINGFIELD", "loc" : [ -72.606544, 42.117907 ],
+  "pop" : 12739, "state" : "MA", "_id" : "01107" }
+{ "city" : "SPRINGFIELD", "loc" : [ -72.558432, 42.085314 ],
+  "pop" : 25519, "state" : "MA", "_id" : "01108" }
+{ "city" : "SPRINGFIELD", "loc" : [ -72.554349, 42.114455 ],
+  "pop" : 32635, "state" : "MA", "_id" : "01109" }
+{ "city" : "SPRINGFIELD", "loc" : [ -72.527445, 42.092937 ],
+  "pop" : 14618, "state" : "MA", "_id" : "01118" }
+{ "city" : "SPRINGFIELD", "loc" : [ -72.51211000000001, 42.12473 ],
+  "pop" : 13040, "state" : "MA", "_id" : "01119" }
+{ "city" : "SPRINGFIELD", "loc" : [ -72.48890299999999, 42.094397 ],
+  "pop" : 3272, "state" : "MA", "_id" : "01128" }
+{ "city" : "SPRINGFIELD", "loc" : [ -72.487622, 42.122263 ],
+  "pop" : 6831, "state" : "MA", "_id" : "01129" }
 ```
-
-#### 2.1.3
-```javascript
-db.dblp.find({"type":"Book","year":{$gte:2014}})
-
-```
-
-#### 2.1.4
-```javascript
-db.dblp.find({"publisher":{$exists:true}},{title:1,_id:0});
-```
-
-#### 2.1.5
-```javascript
-db.dblp.find({"authors":{$in:["Jeffrey D. Ullman"]}},{title:1,_id:0});
-```
-
-#### 2.1.6
-```javascript
-db.dblp.find({"authors.0" : "Jeffrey D. Ullman"}, {"title":1,_id:0});
-```
-
-#### 2.1.7
-```javascript
-db.dblp.find({'authors': ['Jeffrey D. Ullman']}, {title: 1, authors: 1, _id: 0})
-```
-
-#### 2.1.8
-```javascript
-db.dblp.find({"title" : {$regex : /database/, $options : "i"},_id:0});
-```
-
-## 2.2 Distinct queries
-
-#### 2.2.1
-```javascript
-db.dblp.distinct("publisher");
-```
-
-#### 2.2.2
-```javascript
-db.dblp.distinct("authors");
-```
-
-## 2.3 Aggregates
-### 2.3.1 Complex queries
-
-#### 2.3.1.1
-```javascript
-db.dblp.aggregate([{$match : {"authors": "Jeffrey D. Ullman"}}, 
-{$project : {_id: 0, title: 1}}, {$sort : {"pages" : 1}}]);
-```
-
-#### 2.3.1.2
-```javascript
-db.dblp.aggregate([
-  {$match:{"authors":"Jeffrey D. Ullman"}},
-  {$group:{_id:"$year",count:{$sum:1}}},{$sort:  {"count":-1}}]);
-```
-
-#### 2.3.1.3
-```javascript
-db.dblp.aggregate([
-  {$match:{"authors":"Jeffrey D. Ullman"}},
-  {$group:{_id:1,count:{$sum:1}}},{$sort:{"count":1}}]);
-```
-
-### 2.3.2 Hard queries
-
-#### 2.3.2.1
-
-```javascript
-db.dblp.aggregate([
-    {"$unwind" : "$authors" },
-    {"$group":{"_id":"$authors", "total": {"$sum": 1}}},
-    {"$sort" : { "total" : -1} }]);
-```
-
-#### 2.3.2.2
-```javascript
-db.dblp.aggregate([
-  {$group:{{"publisher", "year"},count:{$sum:1}}},{$sort:{"count":1}}]);
-```
-
-#### 2.3.2.3
-```javascript
-db.dblp.aggregate([ {$match:{publisher:{$exists:1}} },    {"$group": {"_id": ["$year","$publisher"], "total": {"$sum": 1}}}, {"$sort" : { "total" : -1}} ])
-```
-
-#### 2.3.2.4
-```javascript
-var groupAvgPub = {
-$group:{"_id":"$_id.publisher",
-"average" : { $avg : "$nb"}
-}};
-db.dblp.aggregate([
-matchpublisher,
-groupYearPub,
-groupAvgPub,
-{$sort:{average:-1}}
-]);
-
-```
-
-### 3.1
-
-Pour qu'il ne mette pas à jour que la première ligne qu'il voit.
-```javascript
-db.dblp.update ( { "authors" : "Jeffrey D. Ullman" },
-{$set : { "label" : "Ullman" } },
-{"multi" : true });
-```
-
-#### 3.2.1
-```javascript
-db.dblp.update({"type":"Book","title":/database/i},{ $set : {"label": "database"}},{multi:true})
-```
-
-#### .3.2.2
-```javascript
-db.dblp.update( { publisher: /\bACM\b/i }   ,{$unset : { pages : ""} } ,{multi:true}   );
-```
-
-#### 3.2.3
-On utilise le find avant le update ou le remove pour verifier qu'on touche bien aux donnees souhaitees.
-```javascript
-db.dblp.find({ authors:{ $eq: [] } },{title:1,authors:1,_id:0});
-```
-Equivalent à : 
-```javascript
-db.dblp.find({ "authors" : {$size: 0} }   ,{title:1,authors:1,_id:0});
-```
-
-```javascript
-db.dblp.remove({"authors": null});
-```
-
-#### 3.2.4
-
-```javascript
-db.dblp.updateMany({}, [{$addFields: {"pp": {$subtract: ["$pages.end", "$pages.start"]}}}])
-```
-ou
-```javascript
-db.dblp.updateMany({}, [{$set: {"pp2": {$subtract: ["$pages.end", "$pages.start"]}}}])
-```
-
-### 4.1 Indexing single attributes
-
-#### 4.1.1 For the ”Jeffrey D. Ullman” query, generates the execution plan by adding “.explain()”
-```javascript
-db.dblp.find({"authors" : "Jeffrey D. Ullman"}, {"title" : 1}).explain("executionStats")
-```
+But it is not a replication of the data, each district of big cities has its own zip code, this is why we can have same cities name with different localisation and population.
 
 
-### 4.2
+## Import the data in Mongodb
 
+We decided to use the container we used during practical works (named `mongo-db`).
+
+So first, we must import our data in our container (we imported them in the folder named cities inside our container).
 ```shell
-mongoimport --db TP --collection cities cities.json
+docker cp ./zips.json mongo-db:./cities
+```
+
+Then we start and enter our container to write our command.
+```shell
+docker start mongo-db
+docker exec -it mongo-db bash
+```
+
+Then we create our database and our collection, using our json.
+```shell
+mongoimport --db cities --collection cities zips.json
+```
+
+Once it is done, we can check if it has been created.
+```shell
+mongo
 ```
 
 ```javascript
-db.cities.find({"name": {"$in": ["Paris", "Lyon", "Bordeaux"]}}, {"_id": 0, "name": 1, "location.coordinates": 1})
+use cities
+db.cities.find().count()
 ```
+![](https://i.imgur.com/CGrhGry.png)
 
-#### 4.2.2
+And we can compare with the original json file length : 
+```bash
+wc zips.json
+```
+![](https://i.imgur.com/ayKHp6Q.png)
+
+The result is indeed our number of lines.
+
+## Query your dataset
+
+### Simple queries
+
+#### Query 1
 ```javascript
-var a =db.cities.findOne({"name": "Paris"}, {location:{coordinates:1}, _id:0}).location.coordinates
+db.cities.distinct("city").length
 ```
+This query returns the amount of different cities in the United states.
+
+![](https://i.imgur.com/y05MMyf.png)
+
+
+
+#### Query 2
 ```javascript
-db.cities.find( {"location.coordinates":{ $geoWithin :{$centerSphere : [ a,0.0156961]}}} ,{_id:0,name:1}).count()
+db.cities.find({
+  "state": {
+    $in: [
+      "NC",
+      "SC"
+    ]
+  }
+})
 ```
-la troisième coordonnée est pour avoir la surface de la terre etant donne que nous sommes dans des coordonnees spheriques.
+This one print cities from North and South Carolina.
 
-Ou bien :
+![](https://i.imgur.com/XyQiitu.png)
 
+
+#### Query 3
 ```javascript
-var Paris = db.dblp.findOne({"name": "Paris"}, {_id: 0})
-db.cities.find({"location": {$near: {$geometry: {type: "Point", coordinates: Paris.location.coordinates}, $maxDistance: 100000}}}).count()
-
+db.cities.find({
+  "pop":{
+    $gt: 15000
+  }
+}, {
+  "city": 1
+})
 ```
+Find all queries with 15.000 inhabitants and more.
 
-#### 4.2.3
+![](https://i.imgur.com/INDjpLb.png)
 
+
+#### Query 4
+```javascript
+db.cities.find({
+  "city": "UNION"
+})
+```
+This query print every city named "Union", we can see that there is 15 states containing such city.
+
+![](https://i.imgur.com/sN0UQg5.png)
+
+#### Query 5
+```javascript
+db.cities.aggregate([{
+  $project:{
+    _id:0,
+    city:1,
+    pop:1
+  }
+},
+{
+  $sort:{
+    "pop":-1
+  }
+}])
+```
+This query sorts all the city (or districts) depending on their population, starting from the most populated.
+
+![](https://i.imgur.com/vVNxC0d.png)
+
+
+### Complex queries
+
+#### Query 1
+```javascript
+db.cities.ensureIndex({loc: "2dsphere"});
+
+var NewYork = db.cities.findOne({
+  city: "NEW YORK"
+}, {
+  _id: 0
+});
+
+db.cities.find({
+  "loc": {
+    $near: {
+      $geometry: {
+        coordinates: NewYork.loc
+      },
+      $maxDistance: 10000
+    }
+  }
+}).count();
+```
+In this query, we have 3 steps. The first one is to create an index on the loc. Then we create a variable that gets all the data of the New-York city. And finally, we count the number of city in an area of 10 km around New-York.
+
+![](https://i.imgur.com/e5umcOF.png)
+
+#### Query 2
+```javascript
+db.cities.aggregate([{
+  $group:{
+    _id:"$city",
+    totalPop:{
+      $sum:"$pop"
+    }
+  }
+}])
+```
+This query groups cities depending on their name and add their population (to get the total population of cities with the same name).
+
+![](https://i.imgur.com/e9sF5De.png)
+
+Bustins Island is just a touristic place, nobody lives there.
+
+### Hard queries
+
+#### Query 1
+```javascript
+var newyork = db.cities.findOne({
+  "city": "NEW YORK"
+}, {
+  loc:1,
+  _id:0
+}).loc;
+
+var washington = db.cities.findOne({
+  "city": "WASHINGTON"
+}, {
+  loc:1,
+  _id:0
+}).loc;
+
+var cleveland = db.cities.findOne({
+  "city": "CLEVELAND"
+}, {
+  loc:1,
+  _id:0
+}).loc;
+
+var triangle = [[newyork, washington, cleveland, newyork]];
+
+db.cities.find({
+  loc: {
+    $geoWithin: {
+      $geometry: {
+        type: "Polygon",
+        coordinates: triangle
+      }
+    }
+  }
+}).count();
+```
+In this query, we get the locations of three cities : New-York, Washington and Cleveland. Then these coordinates are used to create a triangle and we count the number of cities within this triangle.
+
+![](https://i.imgur.com/A5Przw4.png)
+
+#### Query 2
+```javascript
+db.cities.aggregate([{
+  $group: {
+    _id: {
+      city: "$city",
+      state: "$state"
+    },
+    totalPop: {
+      $sum: "$pop"
+    }
+  }
+}, {
+  $sort: {
+    totalPop: -1
+  }
+}])
+```
+In this query, we group cities depending on two data : the city name and the state. That way, we can get the total pop of each city, no matter the different districts and the cities that have the same name, but are located in different states.
+
+![](https://i.imgur.com/vXY3o3w.png)
 
